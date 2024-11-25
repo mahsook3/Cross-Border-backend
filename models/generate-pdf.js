@@ -1,6 +1,7 @@
-import pdf from 'pdf-creator-node';
+import puppeteer from 'puppeteer';
 import Handlebars from 'handlebars';
 
+// Define your HTML template
 const htmlTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -211,17 +212,25 @@ const htmlTemplate = `<!DOCTYPE html>
 </html>`;
 
 export async function generatePDF(jsonData) {
+    // Compile the HTML template using Handlebars
     const template = Handlebars.compile(htmlTemplate);
     const html = template(jsonData);
 
-    const document = {
-        html: html,
-        data: jsonData,
-        type: 'buffer',
-    };
-
     try {
-        const buffer = await pdf.create(document);
+        // Launch Puppeteer
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        // Set the HTML content
+        await page.setContent(html);
+
+        // Generate the PDF
+        const buffer = await page.pdf({ format: 'A4', printBackground: true });
+
+        // Close the browser
+        await browser.close();
+
+        // Convert the PDF buffer to a Base64 string
         const base64 = buffer.toString('base64');
         return base64;
     } catch (error) {
